@@ -24,11 +24,16 @@ class TaskController extends Controller
         ]);
     }
 
-    public function update(Task $task)
+    public function update(Request $request, Task $task)
     {
-        $task->update([
-            'completed' => !$task->completed,
+        $request->validate([
+            'title' => 'sometimes|string|max:255',
+            'completed' => 'sometimes|boolean',
         ]);
+
+        $data = $request->only(['title', 'completed']);
+
+        $task->update($data);
 
         return $task;
     }

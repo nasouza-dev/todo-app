@@ -23,6 +23,12 @@
         >
           {{ task.title }}
         </span>
+        <button
+          class="btn btn-warning btn-sm me-2"
+          @click="editTask(task)"
+        >
+          ✏️
+        </button>
 
         <button
           class="btn btn-danger btn-sm"
@@ -39,34 +45,48 @@
 import axios from 'axios'
 
 export default {
-  data() {
+ data() {
     return {
-      tasks: [],
-      newTask: ''
+        tasks: [],
+        newTask: '',
+        editingTask: null
     }
-  },
+},
   mounted() {
     this.loadTasks()
   },
   methods: {
     async loadTasks() {
-      const res = await axios.get('/api/tasks')
-      this.tasks = res.data
+        const res = await axios.get('/api/tasks')
+        this.tasks = res.data
     },
+
     async addTask() {
-      if (!this.newTask) return
-      await axios.post('/api/tasks', { title: this.newTask })
-      this.newTask = ''
-      this.loadTasks()
+        if (!this.newTask) return
+
+        await axios.post('/api/tasks', {
+            title: this.newTask
+        })
+
+        this.newTask = ''
+        this.loadTasks()
     },
+
     async toggleTask(task) {
-      await axios.put(`/api/tasks/${task.id}`)
-      this.loadTasks()
+        await axios.put(`/api/tasks/${task.id}`, {
+            completed: !task.completed
+        })
+
+        this.loadTasks()
     },
+
     async deleteTask(task) {
-      await axios.delete(`/api/tasks/${task.id}`)
-      this.loadTasks()
+        await axios.delete(`/api/tasks/${task.id}`)
+        this.loadTasks()
+    },
+
+    editTask(task) {
+        this.editingTask = task
     }
-  }
 }
 </script>
