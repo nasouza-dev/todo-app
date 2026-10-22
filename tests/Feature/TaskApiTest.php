@@ -96,4 +96,49 @@ class TaskApiTest extends TestCase
             'title' => 'Estudar Laravel',
         ]);
     }
+    
+    public function test_can_list_tasks(): void
+    {
+        Task::create([
+            'title' => 'Estudar PHP',
+            'completed' => false,
+        ]);
+
+        Task::create([
+            'title' => 'Estudar Laravel',
+            'completed' => true,
+        ]);
+
+        $response = $this->getJson('/api/tasks');
+
+        $response
+            ->assertOk()
+            ->assertJsonCount(2)
+            ->assertJsonFragment([
+                'title' => 'Estudar PHP',
+                'completed' => false,
+            ])
+            ->assertJsonFragment([
+                'title' => 'Estudar Laravel',
+                'completed' => true,
+            ]);
+    }
+    
+    public function test_can_delete_a_task(): void
+    {
+        $task = Task::create([
+            'title' => 'Tarefa para excluir',
+            'completed' => false,
+        ]);
+
+        $response = $this->deleteJson("/api/tasks/{$task->id}");
+
+        $response->assertNoContent();
+
+        $this->assertDatabaseMissing('tasks', [
+            'id' => $task->id,
+        ]);
+    }
+
+
 }
