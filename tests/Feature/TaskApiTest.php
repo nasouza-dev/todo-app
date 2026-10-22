@@ -140,5 +140,21 @@ class TaskApiTest extends TestCase
         ]);
     }
 
+    public function test_cannot_update_a_task_that_does_not_exist(): void
+    {
+        $response = $this->putJson('/api/tasks/999999', [
+            'title' => 'Tarefa inexistente',
+        ]);
+
+        $response->assertNotFound();
+    }
+
+    public function test_cannot_delete_a_task_that_does_not_exist(): void
+    {
+        $response = $this->deleteJson('/api/tasks/999999');
+
+        $response->assertNotFound();
+    }
+
 
 }

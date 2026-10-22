@@ -48,17 +48,27 @@
       <p class="text-secondary mb-0">Carregando tarefas...</p>
     </div>
 
-    <!-- Lista vazia -->
-    <div
-      v-else-if="tasks.length === 0"
-      class="text-center py-5 my-4 border rounded"
-    >
-      <div class="fs-1 mb-3">📝</div>
-      <h5 class="mb-2">Tudo pronto para começar?</h5>
-      <p class="text-secondary mb-0">
-        Você ainda não tem tarefas. Adicione sua primeira tarefa acima!
-      </p>
-    </div>
+    
+<!-- Erro ao carregar a lista -->
+<div v-else-if="loadError" class="text-center py-5 my-4 border rounded">
+  <p class="text-danger mb-3">{{ loadError }}</p>
+  <button class="btn btn-outline-primary" @click="loadTasks">
+    Tentar novamente
+  </button>
+</div>
+
+<!-- Lista vazia -->
+<div
+  v-else-if="tasks.length === 0"
+  class="text-center py-5 my-4 border rounded"
+>
+  <div class="fs-1 mb-3">📝</div>
+  <h5 class="mb-2">Tudo pronto para começar?</h5>
+  <p class="text-secondary mb-0">
+    Você ainda não tem tarefas. Adicione sua primeira tarefa acima!
+  </p>
+</div>
+
 
     <!-- Lista de tarefas -->
     <ul v-else class="list-unstyled d-flex flex-column gap-2">
@@ -87,7 +97,7 @@
               type="checkbox"
               class="form-check-input me-3 flex-shrink-0"
               :checked="task.completed"
-              :disabled="updatingTaskId === task.id"
+              :disabled="isSaving || deletingTaskId !== null || updatingTaskId !== null"
               @change="toggleTask(task)"
               :aria-label="`Concluir tarefa: ${task.title}`"
             />
@@ -134,7 +144,7 @@
 
             <button
               class="btn btn-outline-danger btn-sm"
-              :disabled="deletingTaskId === task.id"
+              :disabled="isSaving || deletingTaskId !== null"
               :aria-label="`Excluir tarefa: ${task.title}`"
               @click="deleteTask(task)"
             >
@@ -160,7 +170,8 @@ export default {
       isSaving: false,
       updatingTaskId: null,
       deletingTaskId: null,
-      errorMessage: ''
+      errorMessage: '',
+      loadError: '',
     }
   },
 
@@ -169,19 +180,20 @@ export default {
   },
 
   methods: {
-    async loadTasks() {
-      this.isLoading = true
-      this.errorMessage = ''
+    
+async loadTasks() {
+  this.isLoading = true
+  this.loadError = ''
 
-      try {
-        const response = await axios.get('/api/tasks')
-        this.tasks = response.data
-      } catch (error) {
-        this.errorMessage = 'Não foi possível carregar as tarefas. Tente novamente.'
-      } finally {
-        this.isLoading = false
-      }
-    },
+  try {
+    const response = await axios.get('/api/tasks')
+    this.tasks = response.data
+  } catch (error) {
+    this.loadError = 'Não foi possível carregar as tarefas. Tente novamente.'
+  } finally {
+    this.isLoading = false
+  }
+},
 
     async addTask() {
       const title = this.newTask.trim()
