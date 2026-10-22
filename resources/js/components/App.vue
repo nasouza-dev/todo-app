@@ -28,14 +28,14 @@
           class="form-control"
           placeholder="Digite uma nova tarefa..."
           aria-label="Nome da nova tarefa"
-          :disabled="isSaving"
+          :disabled="isBusy"
           maxlength="255"
         />
 
         <button
           type="submit"
           class="btn btn-primary"
-          :disabled="isSaving"
+          :disabled="isBusy"
         >
           {{ isSaving ? 'Adicionando...' : '+ Adicionar tarefa' }}
         </button>
@@ -85,7 +85,7 @@
             class="form-control"
             aria-label="Editar título da tarefa"
             maxlength="255"
-            :disabled="isSaving"
+            :disabled="isBusy"
             @keyup.enter="saveTask"
             @keyup.esc="cancelEdit"
           />
@@ -97,7 +97,7 @@
               type="checkbox"
               class="form-check-input me-3 flex-shrink-0"
               :checked="task.completed"
-              :disabled="isSaving || deletingTaskId !== null || updatingTaskId !== null"
+              :disabled="isBusy"
               @change="toggleTask(task)"
               :aria-label="`Concluir tarefa: ${task.title}`"
             />
@@ -117,7 +117,7 @@
           <template v-if="editingTask?.id === task.id">
             <button
               class="btn btn-success btn-sm me-2"
-              :disabled="isSaving"
+              :disabled="isBusy"
               @click="saveTask"
             >
               {{ isSaving ? 'Salvando...' : 'Salvar' }}
@@ -125,7 +125,7 @@
 
             <button
               class="btn btn-secondary btn-sm"
-              :disabled="isSaving"
+              :disabled="isBusy"
               @click="cancelEdit"
             >
               Cancelar
@@ -135,7 +135,7 @@
           <template v-else>
             <button
               class="btn btn-outline-warning btn-sm me-2"
-              :disabled="isSaving || deletingTaskId === task.id"
+              :disabled="isBusy"
               :aria-label="`Editar tarefa: ${task.title}`"
               @click="editTask(task)"
             >
@@ -144,7 +144,7 @@
 
             <button
               class="btn btn-outline-danger btn-sm"
-              :disabled="isSaving || deletingTaskId !== null"
+              :disabled="isBusy"
               :aria-label="`Excluir tarefa: ${task.title}`"
               @click="deleteTask(task)"
             >
@@ -175,23 +175,39 @@ export default {
     }
   },
 
-  mounted() {
-    this.loadTasks()
+  computed: {
+    isBusy() {
+      return (
+        this.isSaving ||
+        this.updatingTaskId !== null ||
+        this.deletingTaskId !== null
+      )
+    },
   },
+
+  mounted() {
+  this.loadTasks(true)
+},
 
   methods: {
     
-async loadTasks() {
-  this.isLoading = true
+async loadTasks(showLoader = false) {
+  if (showLoader) {
+    this.isLoading = true
+  }
+
   this.loadError = ''
 
   try {
     const response = await axios.get('/api/tasks')
     this.tasks = response.data
   } catch (error) {
-    this.loadError = 'Não foi possível carregar as tarefas. Tente novamente.'
+    this.loadError =
+      'Não foi possível carregar as tarefas. Tente novamente.'
   } finally {
-    this.isLoading = false
+    if (showLoader) {
+      this.isLoading = false
+    }
   }
 },
 
@@ -203,7 +219,7 @@ async loadTasks() {
         return
       }
 
-      if (this.isSaving) return
+      if (this.isBusy) return
 
       this.isSaving = true
       this.errorMessage = ''
@@ -222,7 +238,7 @@ async loadTasks() {
     },
 
     async toggleTask(task) {
-      if (this.updatingTaskId !== null) return
+      if (this.isBusy) return
 
       this.updatingTaskId = task.id
       this.errorMessage = ''
@@ -241,7 +257,7 @@ async loadTasks() {
     },
 
     async deleteTask(task) {
-      if (this.deletingTaskId !== null) return
+      if (this.isBusy) return
 
       const confirmed = window.confirm(
         `Tem certeza que deseja excluir a tarefa "${task.title}"?`
@@ -263,12 +279,13 @@ async loadTasks() {
     },
 
     editTask(task) {
+      if (this.isBusy) return
       this.errorMessage = ''
       this.editingTask = { ...task }
     },
 
     async saveTask() {
-      if (!this.editingTask || this.isSaving) return
+      if (!this.editingTask || this.isBusy) return
 
       const title = this.editingTask.title.trim()
 
@@ -304,7 +321,7 @@ async loadTasks() {
     },
 
     cancelEdit() {
-      if (this.isSaving) return
+      if (this.isBusy) return
 
       this.editingTask = null
       this.errorMessage = ''
