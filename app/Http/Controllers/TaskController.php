@@ -14,28 +14,40 @@ class TaskController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $request->merge([
+            'title' => is_string($request->input('title'))
+                ? trim($request->input('title'))
+                : $request->input('title'),
+        ]);
+
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
         ]);
 
         return Task::create([
-            'title' => $request->title,
+            'title' => $validated['title'],
             'completed' => false,
         ]);
     }
 
     public function update(Request $request, Task $task)
     {
-        $request->validate([
-            'title' => 'sometimes|string|max:255',
+        if ($request->has('title')) {
+            $request->merge([
+                'title' => is_string($request->input('title'))
+                    ? trim($request->input('title'))
+                    : $request->input('title'),
+            ]);
+        }
+
+        $validated = $request->validate([
+            'title' => 'sometimes|required|string|max:255',
             'completed' => 'sometimes|boolean',
         ]);
 
-        $data = $request->only(['title', 'completed']);
+        $task->update($validated);
 
-        $task->update($data);
-
-        return $task;
+        return $task->fresh();
     }
 
     public function destroy(Task $task)
